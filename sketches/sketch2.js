@@ -1,13 +1,13 @@
 registerSketch('sk2', function (p) {
 
-  let workTime = 25 * 60 * 1000;
-  let breakTime = 5 * 60 * 1000;
-  let startTime;
-  let isWork = true;
-  let running = false;
+  let studyTime = 0;
+  let breakTime = 0;
+  let lastSwitchTime = null;
+  let mode = "study"; // "study" or "break"
+  let sessionEnded = false;
 
   p.setup = function () {
-    let c = p.createCanvas(600, 400);
+    let c = p.createCanvas(700, 400);
     c.parent('sketch-container-sk2');
     p.textAlign(p.CENTER, p.CENTER);
   };
@@ -15,46 +15,77 @@ registerSketch('sk2', function (p) {
   p.draw = function () {
     p.background(245);
 
-    if (running) {
-      let elapsed = p.millis() - startTime;
-      let duration = isWork ? workTime : breakTime;
-      let remaining = duration - elapsed;
+    if (!sessionEnded && lastSwitchTime !== null) {
+      let elapsed = p.millis() - lastSwitchTime;
 
-      let progress = p.constrain(remaining / duration, 0, 1);
-      p.fill(isWork ? '#ff7675' : '#74b9ff');
-      p.rect(100, 220, progress * 400, 30);
-
-      p.noFill();
-      p.stroke(0);
-      p.rect(100, 220, 400, 30);
-
-      p.noStroke();
-      p.fill(0);
-      p.textSize(32);
-      p.text(formatTime(remaining), p.width / 2, 160);
-
-      if (remaining <= 0) {
-        running = false;
+      if (mode === "study") {
+        studyTime += elapsed;
+      } else {
+        breakTime += elapsed;
       }
+
+      lastSwitchTime = p.millis();
     }
 
+    // ---- STUDY SIDE ----
+    p.fill(mode === "study" ? '#81ecec' : '#dfe6e9');
+    p.rect(0, 0, p.width / 2, p.height);
+
+    p.fill(0);
     p.textSize(20);
-    p.text(isWork ? "WORK SESSION" : "BREAK SESSION", p.width / 2, 80);
+    p.text("STUDYING", p.width / 4, 40);
+    p.textSize(32);
+    p.text(formatTime(studyTime), p.width / 4, p.height / 2);
 
+    // ---- BREAK SIDE ----
+    p.fill(mode === "break" ? '#fab1a0' : '#dfe6e9');
+    p.rect(p.width / 2, 0, p.width / 2, p.height);
+
+    p.fill(0);
+    p.textSize(20);
+    p.text("BREAK / PHONE", p.width * 0.75, 40);
+    p.textSize(32);
+    p.text(formatTime(breakTime), p.width * 0.75, p.height / 2);
+
+    // ---- Instructions ----
     p.textSize(14);
-    p.text("Click to start / switch", p.width / 2, 350);
+    p.text(
+      sessionEnded
+        ? "Session ended — click to reset"
+        : "Click to flip the switch | Press E to end session",
+      p.width / 2,
+      p.height - 30
+    );
   };
 
+  // Flip the switch
   p.mousePressed = function () {
-    if (!running) {
-      isWork = !isWork;
-      startTime = p.millis();
-      running = true;
+    if (sessionEnded) {
+      resetSession();
+      return;
+    }
+
+    mode = mode === "study" ? "break" : "study";
+    lastSwitchTime = p.millis();
+  };
+
+  // End session
+  p.keyPressed = function () {
+    if (p.key === 'E' || p.key === 'e') {
+      sessionEnded = true;
     }
   };
+
+  function resetSession() {
+    studyTime = 0;
+    breakTime = 0;
+    mode = "study";
+    sessionEnded = false;
+    lastSwitchTime = null;
+  }
 
   function formatTime(ms) {
-    let total = Math.max(0, Math.floor(ms / 1000));
+    let total = Math.floor(ms / 1000);
     let m = Math.floor(total / 60);
     let s = total % 60;
     return `${m}:${s.toString().padStart(2, '0')}`;
