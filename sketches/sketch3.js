@@ -1,88 +1,53 @@
-let dailyGoal = 2.0; // liters
-let wakeHour = 8;
-let sleepHour = 22;
+registerSketch('sk4', function (p) {
 
-function setup() {
-  createCanvas(600, 600);
-  angleMode(DEGREES);
-}
+  const dailyLiters = 2.5;
 
-function draw() {
-  background(245);
+  p.setup = function () {
+    let c = p.createCanvas(500, 500);
+    c.parent('sketch-container-sk4');
+    p.angleMode(p.DEGREES);
+    p.textAlign(p.CENTER, p.CENTER);
+  };
 
-  translate(width / 2, height / 2);
+  p.draw = function () {
+    p.background(250);
+    p.translate(p.width / 2, p.height / 2);
 
-  let hr = hour();
-  let min = minute();
-  let sec = second();
+    let h = p.hour() % 12;
+    let m = p.minute();
+    let s = p.second();
 
-  // ----- Hydration progress -----
-  let dayProgress = constrain(
-    map(hr + min / 60, wakeHour, sleepHour, 0, 1),
-    0,
-    1
-  );
+    let totalMinutes = h * 60 + m;
+    let water = p.map(totalMinutes, 0, 720, 0, dailyLiters);
 
-  let waterSoFar = dailyGoal * dayProgress;
+    // Water ring
+    p.noFill();
+    p.stroke(100, 150, 255);
+    p.strokeWeight(12);
+    p.arc(0, 0, 360, 360, -90, p.map(water, 0, dailyLiters, -90, 270));
 
-  // Blue hydration arc
-  noFill();
-  stroke(70, 130, 255);
-  strokeWeight(16);
-  arc(0, 0, 420, 420, -90, -90 + dayProgress * 360);
+    // Clock face
+    p.stroke(0);
+    p.strokeWeight(4);
+    p.ellipse(0, 0, 300);
 
-  // ----- Clock face -----
-  stroke(0);
-  strokeWeight(4);
-  noFill();
-  circle(0, 0, 400);
+    // Hands
+    drawHand(p.map(h + m / 60, 0, 12, 0, 360), 70, 6);
+    drawHand(p.map(m, 0, 60, 0, 360), 110, 4);
+    drawHand(p.map(s, 0, 60, 0, 360), 130, 2, 'red');
 
-  // Hour markers
-  strokeWeight(2);
-  for (let a = 0; a < 360; a += 30) {
-    let x1 = cos(a) * 180;
-    let y1 = sin(a) * 180;
-    let x2 = cos(a) * 195;
-    let y2 = sin(a) * 195;
-    line(x1, y1, x2, y2);
+    p.noStroke();
+    p.fill(0);
+    p.textSize(16);
+    p.text(`${water.toFixed(2)} L`, 0, 180);
+  };
+
+  function drawHand(angle, len, w, col = 'black') {
+    p.push();
+    p.rotate(angle - 90);
+    p.stroke(col);
+    p.strokeWeight(w);
+    p.line(0, 0, len, 0);
+    p.pop();
   }
-
-  // ----- Hands -----
-  // Hour hand
-  push();
-  rotate(map(hr % 12 + min / 60, 0, 12, 0, 360));
-  strokeWeight(6);
-  line(0, 0, 0, -100);
-  pop();
-
-  // Minute hand
-  push();
-  rotate(map(min + sec / 60, 0, 60, 0, 360));
-  strokeWeight(4);
-  line(0, 0, 0, -150);
-  pop();
-
-  // Second hand
-  push();
-  rotate(map(sec, 0, 60, 0, 360));
-  stroke(200, 0, 0);
-  strokeWeight(2);
-  line(0, 0, 0, -170);
-  pop();
-
-  // Center dot
-  fill(0);
-  noStroke();
-  circle(0, 0, 8);
-
-  // ----- Text -----
-  resetMatrix();
-  fill(0);
-  textAlign(CENTER);
-  textSize(16);
-  text(
-    `${waterSoFar.toFixed(2)} L / ${dailyGoal.toFixed(1)} L`,
-    width / 2,
-    height - 30
-  );
-}
+});
