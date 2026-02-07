@@ -1,62 +1,62 @@
-// Instance-mode sketch for tab 2
-let studying = true;
+registerSketch('sk2', function (p) {
 
-let studyTime = 0;
-let breakTime = 0;
+  let workTime = 25 * 60 * 1000;
+  let breakTime = 5 * 60 * 1000;
+  let startTime;
+  let isWork = true;
+  let running = false;
 
-let lastMillis = 0;
+  p.setup = function () {
+    let c = p.createCanvas(600, 400);
+    c.parent('sketch-container-sk2');
+    p.textAlign(p.CENTER, p.CENTER);
+  };
 
-function setup() {
-  createCanvas(700, 400);
-  textAlign(CENTER, CENTER);
-  lastMillis = millis();
-}
+  p.draw = function () {
+    p.background(245);
 
-function draw() {
-  background(240);
+    if (running) {
+      let elapsed = p.millis() - startTime;
+      let duration = isWork ? workTime : breakTime;
+      let remaining = duration - elapsed;
 
-  let now = millis();
-  let delta = now - lastMillis;
-  lastMillis = now;
+      let progress = p.constrain(remaining / duration, 0, 1);
+      p.fill(isWork ? '#ff7675' : '#74b9ff');
+      p.rect(100, 220, progress * 400, 30);
 
-  // Accumulate time
-  if (studying) {
-    studyTime += delta;
-  } else {
-    breakTime += delta;
+      p.noFill();
+      p.stroke(0);
+      p.rect(100, 220, 400, 30);
+
+      p.noStroke();
+      p.fill(0);
+      p.textSize(32);
+      p.text(formatTime(remaining), p.width / 2, 160);
+
+      if (remaining <= 0) {
+        running = false;
+      }
+    }
+
+    p.textSize(20);
+    p.text(isWork ? "WORK SESSION" : "BREAK SESSION", p.width / 2, 80);
+
+    p.textSize(14);
+    p.text("Click to start / switch", p.width / 2, 350);
+  };
+
+  p.mousePressed = function () {
+    if (!running) {
+      isWork = !isWork;
+      startTime = p.millis();
+      running = true;
+    }
+  };
+
+  function formatTime(ms) {
+    let total = Math.max(0, Math.floor(ms / 1000));
+    let m = Math.floor(total / 60);
+    let s = total % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
   }
-
-  // Left side: Study
-  fill(studying ? '#b6e3c6' : 220);
-  rect(0, 0, width / 2, height);
-
-  // Right side: Break
-  fill(!studying ? '#f7b7b2' : 220);
-  rect(width / 2, 0, width / 2, height);
-
-  fill(0);
-  textSize(20);
-  text("STUDY", width / 4, 40);
-  text("BREAK / PHONE", (3 * width) / 4, 40);
-
-  textSize(18);
-  text(formatTime(studyTime), width / 4, height / 2);
-  text(formatTime(breakTime), (3 * width) / 4, height / 2);
-
-  // Switch indicator
-  textSize(14);
-  text("Click to flip switch", width / 2, height - 30);
-}
-
-function mousePressed() {
-  studying = !studying;
-}
-
-// Helper: format ms → mm:ss
-function formatTime(ms) {
-  let totalSeconds = floor(ms / 1000);
-  let minutes = floor(totalSeconds / 60);
-  let seconds = totalSeconds % 60;
-  return nf(minutes, 2) + ":" + nf(seconds, 2);
-}
-
+});
